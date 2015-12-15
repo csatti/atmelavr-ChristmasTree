@@ -13,8 +13,10 @@
 
 extern volatile uint32_t timeReference;	// time elapsed since start up (in milliseconds)
 
+void set_ledcontrol(uint8_t control);
+void set_color(uint8_t color);
 void click(void);
-void setup_timer(void);
+void setup_timers(void);
 
 
 

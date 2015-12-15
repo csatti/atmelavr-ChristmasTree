@@ -13,7 +13,11 @@ volatile uint8_t prog[200];
 volatile uint32_t timeReference = 0;	// time elapsed since start up (in milliseconds)
 volatile uint16_t timeStep = 1000;
 volatile uint8_t lcnt = 16; 
-volatile uint8_t lclr = 1;
+volatile uint8_t lclr = 0;
+
+uint8_t intensityRed = 0xFF;
+uint8_t intensityBlue = 0xFF;
+uint8_t intensityGreen = 0xFF;
 
 
 void set_ledcontrol(uint8_t control)
@@ -53,26 +57,35 @@ void set_ledcontrol(uint8_t control)
 
 void set_color(uint8_t color)
 {
-	for (uint8_t i = 0; i < 3; i++)
+	if (color == 1) {
+		TCCR0B = _BV(CS01);  // Prescaler = 8
+		OCR0A = intensityRed >> 2;
+		TCCR0A |= _BV(COM0A1) | _BV(COM0A0);
+	}
+	else
 	{
-		if (color & 1) {
-			switch (i)
-			{
-				case 0: PORTD &= ~_BV(6); break;
-				case 1: PORTD &= ~_BV(3); break;
-				case 2: PORTD |= _BV(5); break;
-			}
-		}
-		else
-		{
-			switch (i)
-			{
-				case 0: PORTD |= _BV(6); break;
-				case 1: PORTD |= _BV(3); break;
-				case 2: PORTD &= ~_BV(5); break;
-			}
-		}
-		color >>= 1;
+		TCCR0A &= ~(_BV(COM0A1)| _BV(COM0A0)); 
+		PORTD |= _BV(6);
+	}
+	if (color == 2) {
+		OCR2B = intensityGreen;
+		TCCR2A |= _BV(COM2B1) | _BV(COM2B0);
+	}
+	else
+	{
+		TCCR2A &= ~(_BV(COM2B1)| _BV(COM2B0)); 
+		PORTD |= _BV(3);
+	}
+	if (color == 3) {
+		TCCR0B = _BV(WGM02) | _BV(CS01) | _BV(CS00); // Prescaler = 64, fast PWM with OCR0A as top
+		OCR0A = 0x3F;
+		OCR0B = intensityBlue >> 5;
+		TCCR0A |= _BV(COM0B1);
+	}
+	else
+	{
+		TCCR0A &= ~_BV(COM0B1); 
+		PORTD &= ~_BV(5);
 	}
 }
 
@@ -93,21 +106,21 @@ void click(void)
 	timeStep--;
 	if (timeStep == 0) {
 		timeStep = 200;
-		if (lcnt == 0) {
-			lcnt = 0x03;
+		if (lcnt == 0x10) {
+			lcnt = 0x11;
 			
 		}
-		lclr >>= 1;
-			if (!lclr) lclr = 4;
-			set_color(lclr);
+		if (++lclr > 3) lclr = 1;
+		set_color(lclr);
 		set_ledcontrol(lcnt);
 		lcnt <<= 1;
 	}
 }
 
-void setup_timer(void)
+void setup_timers(void)
 {
 	cli();
+	// Timing with timer 1
 	TCCR1A = 0;
 	TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS10); // No prescaling, CTC with ICR1
 	TCCR1C = 0;
@@ -115,5 +128,19 @@ void setup_timer(void)
 	ICR1 = 999;
 	OCR1A = 500;
 	//TIMSK1 = _BV(OCIE1A) | _BV(ICIE1);
+	
+	// Timer 0, PWM for blue and red colors
+	TCCR0A = _BV(WGM00) | _BV(WGM01);
+	TCNT0 = 0;
+	OCR0A = 0x7F;
+	OCR0B = 0x7F;
+	
+	// Timer 2, PWM for green color
+	TCCR2A = _BV(WGM20) | _BV(WGM21);
+	TCNT2 = 0x7F; // offset compared to timer 0
+	OCR2B = 0x7F;
+	
+	TCCR0B = _BV(CS01); // Enable timer 0 with prescaler = 8
+	TCCR2B = _BV(CS21); // Enable timer 2 with prescaler = 8
 	sei();
 }

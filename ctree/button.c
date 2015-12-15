@@ -21,7 +21,7 @@ ISR(INT0_vect)
 			return;
 		}
 		uint32_t p = timeReference - buttonPressed;
-		if ( p > 1000) {
+		if ( p > 500) {
 			longPress = 1;
 			return;
 		}
