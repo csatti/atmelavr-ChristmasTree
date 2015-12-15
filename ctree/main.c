@@ -16,6 +16,10 @@ void battery_check(void)
 {
 	uint16_t adc;
 	
+	set_color(3); // Blue
+	set_ledcontrol(0x11); // Switch on blue lights as a load
+	_delay_ms(200);
+	
 	ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1); // AVCC as reference, measuring internal 1V1
 	ADCSRA = _BV(ADEN) | _BV(ADSC) | _BV(ADIF) | _BV(ADPS1); // ADC enable, start conversion, interrupt flag cleared, prescaler = 4
 	while (!(ADCSRA & _BV(ADIF))) {}
@@ -24,9 +28,8 @@ void battery_check(void)
 	while (!(ADCSRA & _BV(ADIF))) {}
 	adc = ADC;
 	ADCSRA = 0;
-	if (adc > 462) set_color(1); // Red, about 2.4V and bellow
+	if (adc > 442) set_color(1); // Red, about 2.4V and bellow
 	else set_color(2); // Green
-	set_ledcontrol(0x11);
 	_delay_ms(2000);
 	set_ledcontrol(0);
 }
@@ -38,9 +41,7 @@ void go_to_sleep(void)
 	PORTD = 0xDF;
 	ignorePress = 1;
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-	sleep_enable();
 	sleep_mode();
-	sleep_disable();
 	PORTB = 0x01;
 	PORTD = 0x44;
 	EIMSK = _BV(INT0);

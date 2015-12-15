@@ -60,6 +60,7 @@ void set_color(uint8_t color)
 	if (color == 1) {
 		TCCR0B = _BV(CS01);  // Prescaler = 8
 		OCR0A = intensityRed >> 2;
+		TCNT0 = 0;
 		TCCR0A |= _BV(COM0A1) | _BV(COM0A0);
 	}
 	else
@@ -69,6 +70,7 @@ void set_color(uint8_t color)
 	}
 	if (color == 2) {
 		OCR2B = intensityGreen;
+		TCNT2 = 0;
 		TCCR2A |= _BV(COM2B1) | _BV(COM2B0);
 	}
 	else
@@ -80,6 +82,7 @@ void set_color(uint8_t color)
 		TCCR0B = _BV(WGM02) | _BV(CS01) | _BV(CS00); // Prescaler = 64, fast PWM with OCR0A as top
 		OCR0A = 0x3F;
 		OCR0B = intensityBlue >> 5;
+		TCNT0 = 0;
 		TCCR0A |= _BV(COM0B1);
 	}
 	else
