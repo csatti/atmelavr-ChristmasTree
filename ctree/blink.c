@@ -89,12 +89,12 @@ ISR(TIMER1_CAPT_vect)
 
 void click(void)
 {
-	//timeReference++;
+	timeReference++;
 	timeStep--;
 	if (timeStep == 0) {
 		timeStep = 200;
-		if (lcnt == 16) {
-			lcnt = 0x11;
+		if (lcnt == 0) {
+			lcnt = 0x03;
 			
 		}
 		lclr >>= 1;
@@ -107,6 +107,7 @@ void click(void)
 
 void setup_timer(void)
 {
+	cli();
 	TCCR1A = 0;
 	TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS10); // No prescaling, CTC with ICR1
 	TCCR1C = 0;
@@ -114,4 +115,5 @@ void setup_timer(void)
 	ICR1 = 999;
 	OCR1A = 500;
 	//TIMSK1 = _BV(OCIE1A) | _BV(ICIE1);
+	sei();
 }
