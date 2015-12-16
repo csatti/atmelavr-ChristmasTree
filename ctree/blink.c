@@ -12,12 +12,9 @@ volatile uint8_t prog[200];
 
 volatile uint32_t timeReference = 0;	// time elapsed since start up (approx in milliseconds)
 volatile uint16_t timeStep = 1000;
-volatile uint8_t lcnt = 16; 
-volatile uint8_t lclr = 0;
 
-uint8_t intensityRed = 0xFF;
-uint8_t intensityBlue = 0xFF;
-uint8_t intensityGreen = 0xFF;
+uint8_t _intensity = 0xFF;
+uint8_t _color = 0;
 
 
 void set_ledcontrol(uint8_t control)
@@ -57,10 +54,12 @@ void set_ledcontrol(uint8_t control)
 
 void set_color(uint8_t color)
 {
-	if (color == 1) {
+	_color = color;
+	if ((color == 1) || (color == 4)) {
 		TCCR0B = _BV(CS01);  // Prescaler = 8
-		OCR0A = intensityRed >> 2;
-		TCNT0 = 0;
+		OCR0A = _intensity >> 2;
+		//TCNT0 = 0;
+		_color = 1;
 		TCCR0A |= _BV(COM0A1) | _BV(COM0A0);
 	}
 	else
@@ -69,8 +68,8 @@ void set_color(uint8_t color)
 		PORTD |= _BV(6);
 	}
 	if (color == 2) {
-		OCR2B = intensityGreen >> 1;
-		TCNT2 = 0;
+		OCR2B = _intensity >> 1;
+		//TCNT2 = 0;
 		TCCR2A |= _BV(COM2B1) | _BV(COM2B0);
 	}
 	else
@@ -79,10 +78,10 @@ void set_color(uint8_t color)
 		PORTD |= _BV(3);
 	}
 	if (color == 3) {
-		TCCR0B = _BV(WGM02) | _BV(CS01) | _BV(CS00); // Prescaler = 64, fast PWM with OCR0A as top
-		OCR0A = 0x3F;
-		OCR0B = intensityBlue >> 5;
-		TCNT0 = 0;
+		TCCR0B = _BV(WGM02) | _BV(CS01) ;//| _BV(CS00); // Prescaler = 64, fast PWM with OCR0A as top
+		OCR0A = 0xFF;
+		OCR0B = _intensity >> 3;
+		//TCNT0 = 0;
 		TCCR0A |= _BV(COM0B1);
 	}
 	else
@@ -92,25 +91,18 @@ void set_color(uint8_t color)
 	}
 }
 
+void set_intensity(uint8_t intensity)
+{
+	_intensity = intensity;
+	if (_color == 1) OCR0A = intensity >> 2;
+	if (_color == 2) OCR2B = intensity >> 1;
+	if (_color == 3) OCR0B = intensity >> 3;
+}
+
 ISR(TIMER2_COMPB_vect)
 {
 	timeReference++;
 	if (timeStep) timeStep--;
-}
-
-void click(void)
-{
-	if (timeStep == 0) {
-		timeStep = 200;
-		if (lcnt == 0x00) {
-			lcnt = 0x1;
-			
-		}
-		if (++lclr > 3) lclr = 1;
-		set_color(lclr);
-		set_ledcontrol(lcnt);
-		lcnt <<= 1;
-	}
 }
 
 void setup_timers(void)

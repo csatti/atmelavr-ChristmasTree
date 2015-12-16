@@ -9,6 +9,7 @@
 #include <avr/io.h>
 #include "blink.h"
 #include "button.h"
+#include "progs.h"
 #include <util/delay.h>
 #include <avr/sleep.h>
 
@@ -17,7 +18,8 @@ void battery_check(void)
 	uint16_t adc;
 	
 	set_color(3); // Blue
-	set_ledcontrol(0x11); // Switch on blue lights as a load
+	set_ledcontrol(0x0F); // Switch on blue lights as a load
+	set_intensity(0x7F);
 	_delay_ms(200);
 	
 	ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1); // AVCC as reference, measuring internal 1V1
@@ -62,14 +64,26 @@ void setup(void)
 
 int main(void)
 {
-    /* Replace with your application code */
+	uint8_t (* prog)(uint8_t);
+	uint8_t progID = 0;
+	
 	setup();
 	battery_check();
+	prog = prog1;
     while (1) 
     {
-		//if (TIFR1 & _BV(ICF1)) {
-		//	TIFR1 |= _BV(ICF1);
-			click();
+
+		if (prog(0)) {
+			progID++;
+			progID %= 3;
+			switch(progID)
+			{
+				case 0: prog = prog1; break;
+				case 1: prog = prog2; break;
+				case 2: prog = prog3; break;
+			}
+			prog(1);
+		}
 		//}
 		if (shortPress) {
 			shortPress = 0;
