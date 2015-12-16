@@ -67,10 +67,10 @@ int main(void)
 	battery_check();
     while (1) 
     {
-		if (TIFR1 & _BV(ICF1)) {
-			TIFR1 |= _BV(ICF1);
+		//if (TIFR1 & _BV(ICF1)) {
+		//	TIFR1 |= _BV(ICF1);
 			click();
-		}
+		//}
 		if (shortPress) {
 			shortPress = 0;
 			PORTC = 0;
@@ -81,6 +81,8 @@ int main(void)
 			go_to_sleep();
 			battery_check();
 		}
+		set_sleep_mode(SLEEP_MODE_IDLE);
+		sleep_mode();
 		
     }
 }

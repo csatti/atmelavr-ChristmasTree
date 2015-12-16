@@ -10,7 +10,7 @@
 volatile uint16_t progcnt = 0;
 volatile uint8_t prog[200];
 
-volatile uint32_t timeReference = 0;	// time elapsed since start up (in milliseconds)
+volatile uint32_t timeReference = 0;	// time elapsed since start up (approx in milliseconds)
 volatile uint16_t timeStep = 1000;
 volatile uint8_t lcnt = 16; 
 volatile uint8_t lclr = 0;
@@ -27,13 +27,13 @@ void set_ledcontrol(uint8_t control)
 		if (control & 1) {
 			switch (i)
 			{
-				case 0: PORTC &= ~_BV(0); break;
-				case 1: PORTC &= ~_BV(1); break;
-				case 2: PORTC &= ~_BV(4); break;
-				case 3: PORTC &= ~_BV(5); break;
-				case 4: PORTC &= ~_BV(2); break;
+				case 0: PORTC &= ~_BV(1); break;
+				case 1: PORTC &= ~_BV(2); break;
+				case 2: PORTC &= ~_BV(5); break;
+				case 3: PORTD &= ~_BV(0); break;
+				case 4: PORTC &= ~_BV(0); break;
 				case 5: PORTC &= ~_BV(3); break;
-				case 6: PORTD &= ~_BV(0); break;
+				case 6: PORTC &= ~_BV(4); break;
 				case 7: PORTD &= ~_BV(1); break;
 			}
 		}
@@ -41,13 +41,13 @@ void set_ledcontrol(uint8_t control)
 		{
 			switch (i)
 			{
-				case 0: PORTC |= _BV(0); break;
-				case 1: PORTC |= _BV(1); break;
-				case 2: PORTC |= _BV(4); break;
-				case 3: PORTC |= _BV(5); break;
-				case 4: PORTC |= _BV(2); break;
+				case 0: PORTC |= _BV(1); break;
+				case 1: PORTC |= _BV(2); break;
+				case 2: PORTC |= _BV(5); break;
+				case 3: PORTD |= _BV(0); break;
+				case 4: PORTC |= _BV(0); break;
 				case 5: PORTC |= _BV(3); break;
-				case 6: PORTD |= _BV(0); break;
+				case 6: PORTC |= _BV(4); break;
 				case 7: PORTD |= _BV(1); break;
 			}
 		}
@@ -69,7 +69,7 @@ void set_color(uint8_t color)
 		PORTD |= _BV(6);
 	}
 	if (color == 2) {
-		OCR2B = intensityGreen;
+		OCR2B = intensityGreen >> 1;
 		TCNT2 = 0;
 		TCCR2A |= _BV(COM2B1) | _BV(COM2B0);
 	}
@@ -92,25 +92,18 @@ void set_color(uint8_t color)
 	}
 }
 
-ISR(TIMER1_CAPT_vect)
+ISR(TIMER2_COMPB_vect)
 {
-	//timeReference++;
-	if (--timeStep == 0) {
-		timeStep = 200;
-		if (lcnt == 0) lcnt = 1;
-		set_ledcontrol(lcnt);
-		lcnt <<= 1;
-	}
+	timeReference++;
+	if (timeStep) timeStep--;
 }
 
 void click(void)
 {
-	timeReference++;
-	timeStep--;
 	if (timeStep == 0) {
 		timeStep = 200;
-		if (lcnt == 0x10) {
-			lcnt = 0x11;
+		if (lcnt == 0x00) {
+			lcnt = 0x1;
 			
 		}
 		if (++lclr > 3) lclr = 1;
@@ -123,14 +116,6 @@ void click(void)
 void setup_timers(void)
 {
 	cli();
-	// Timing with timer 1
-	TCCR1A = 0;
-	TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS10); // No prescaling, CTC with ICR1
-	TCCR1C = 0;
-	TCNT1 = 0;
-	ICR1 = 999;
-	OCR1A = 500;
-	//TIMSK1 = _BV(OCIE1A) | _BV(ICIE1);
 	
 	// Timer 0, PWM for blue and red colors
 	TCCR0A = _BV(WGM00) | _BV(WGM01);
@@ -142,8 +127,10 @@ void setup_timers(void)
 	TCCR2A = _BV(WGM20) | _BV(WGM21);
 	TCNT2 = 0x7F; // offset compared to timer 0
 	OCR2B = 0x7F;
+	OCR2A = 0x7F;
+	TIMSK2 = _BV(OCIE2B);
 	
 	TCCR0B = _BV(CS01); // Enable timer 0 with prescaler = 8
-	TCCR2B = _BV(CS21); // Enable timer 2 with prescaler = 8
+	TCCR2B = _BV(CS21)| _BV(WGM22); // Enable timer 2 with prescaler = 8
 	sei();
 }
