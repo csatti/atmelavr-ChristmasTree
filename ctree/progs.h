@@ -14,7 +14,5 @@
 uint8_t prog1(uint8_t init);
 uint8_t prog2(uint8_t init);
 uint8_t prog3(uint8_t init);
-
-
-
+uint8_t prog4(uint8_t init);
 #endif /* PROGS_H_ */

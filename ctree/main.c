@@ -12,14 +12,19 @@
 #include "progs.h"
 #include <util/delay.h>
 #include <avr/sleep.h>
+#include <avr/eeprom.h>
+#include <avr/boot.h>
+
+static const uint16_t EEMEM ADC_2V4	= 442;
 
 void battery_check(void)
 {
 	uint16_t adc;
-	
+	uint16_t adc_2v4 = eeprom_read_word(&ADC_2V4);
 	set_color(3); // Blue
-	set_ledcontrol(0x0F); // Switch on blue lights as a load
+	set_led_control(0x0F); // Switch on blue lights as a load
 	set_intensity(0x7F);
+	PRR &= ~_BV(PRADC);
 	_delay_ms(200);
 	
 	ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1); // AVCC as reference, measuring internal 1V1
@@ -30,10 +35,11 @@ void battery_check(void)
 	while (!(ADCSRA & _BV(ADIF))) {}
 	adc = ADC;
 	ADCSRA = 0;
-	if (adc > 442) set_color(1); // Red, about 2.4V and bellow
+	if (adc > adc_2v4) set_color(1); // Red, about 2.4V and bellow
 	else set_color(2); // Green
+	PRR |= _BV(PRADC);
 	_delay_ms(2000);
-	set_ledcontrol(0);
+	set_led_control(0);
 }
 
 void go_to_sleep(void)
@@ -52,6 +58,7 @@ void go_to_sleep(void)
 
 void setup(void)
 {
+	uint8_t highfuse = boot_lock_fuse_bits_get(GET_HIGH_FUSE_BITS);
 	DDRB = 0x01;
 	DDRC = 0x3F;
 	DDRD = 0x6B;
@@ -60,6 +67,8 @@ void setup(void)
 	PORTD = 0x47;
 	setup_timers();
 	setup_button();
+	PRR = _BV(PRTWI) | _BV(PRTIM1) | _BV(PRUSART0) | _BV(PRADC); // Switch off TWI, Timer 1, USART and ADC
+	if (highfuse & _BV(6)) PRR |= _BV(PRSPI); // debugWire disabled, switch off SPI
 }
 
 int main(void)
@@ -75,12 +84,13 @@ int main(void)
 
 		if (prog(0)) {
 			progID++;
-			progID %= 3;
+			progID %= 4;
 			switch(progID)
 			{
 				case 0: prog = prog1; break;
 				case 1: prog = prog2; break;
 				case 2: prog = prog3; break;
+				case 3: prog = prog4; break;
 			}
 			prog(1);
 		}
