@@ -16,6 +16,8 @@
 #include <avr/boot.h>
 
 static const uint16_t EEMEM ADC_2V4	= 442;
+static uint8_t (* prog)(uint8_t);
+static uint8_t progID = 0;
 
 void battery_check(void)
 {
@@ -44,6 +46,7 @@ void battery_check(void)
 
 void go_to_sleep(void)
 {
+	EIMSK = _BV(INT0);
 	PORTB = 0xFE;
 	PORTC = 0x3F;
 	PORTD = 0xDF;
@@ -52,7 +55,6 @@ void go_to_sleep(void)
 	sleep_mode();
 	PORTB = 0x01;
 	PORTD = 0x44;
-	EIMSK = _BV(INT0);
 }
 
 
@@ -71,34 +73,37 @@ void setup(void)
 	if (highfuse & _BV(6)) PRR |= _BV(PRSPI); // debugWire disabled, switch off SPI
 }
 
+void next_prog(void)
+{
+	progID++;
+	progID %= 5;
+	switch(progID)
+	{
+		case 0: prog = prog1; break;
+		case 1: prog = prog2; break;
+		case 2: prog = prog3; break;
+		case 3: prog = prog4; break;
+		case 4: prog = prog5; break;
+	}
+	prog(1);
+}
+
 int main(void)
 {
-	uint8_t (* prog)(uint8_t);
-	uint8_t progID = 0;
+
 	
 	setup();
 	battery_check();
-	prog = prog1;
+	prog = prog5;
+	prog(1);
     while (1) 
     {
 
-		if (prog(0)) {
-			progID++;
-			progID %= 4;
-			switch(progID)
-			{
-				case 0: prog = prog1; break;
-				case 1: prog = prog2; break;
-				case 2: prog = prog3; break;
-				case 3: prog = prog4; break;
-			}
-			prog(1);
-		}
+		if (prog(0)) next_prog();
 		//}
 		if (shortPress) {
 			shortPress = 0;
-			PORTC = 0;
-			_delay_ms(2000);
+			next_prog();
 		}
 		if (longPress) {
 			longPress = 0;

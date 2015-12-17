@@ -45,8 +45,7 @@ uint8_t prog2(uint8_t init)
 	if (init) {
 		ledint = 0;
 		color = 1;
-		set_intensity(ledint);
-		set_color(color);
+		set_color_with_intensity(color, ledint);
 		set_led_control(0xFF);
 		return 0;
 	}
@@ -83,8 +82,7 @@ uint8_t prog3(uint8_t init)
 		run = 0;
 		runcolor = 0;
 		ledctrl = 0;
-		set_intensity(0xFF);
-		set_color(color);
+		set_color_with_intensity(color, 0xFF);
 		set_led_control(0x0);
 		return 0;
 	}
@@ -128,9 +126,8 @@ uint8_t prog4(uint8_t init)
 		run = 0;
 		runcolor = 0;
 		rundir = 1;
-		set_intensity(0xFF);
-		set_color(0);
-		set_led_control(0x03);
+		set_color_with_intensity(0, 0x7F);
+		set_led_control(0xF0);
 		return 0;
 	}
 	
@@ -140,7 +137,7 @@ uint8_t prog4(uint8_t init)
 	if (run == 120) rundir = 0;
 	if (!run) {
 		runcolor++;
-		runcolor %= 5; // cycle num
+		runcolor %= 2; // cycle num
 		rundir = 1;
 		if (!runcolor) {
 			color++;
@@ -161,3 +158,50 @@ uint8_t prog4(uint8_t init)
 	
 }
 	
+	
+uint8_t prog5(uint8_t init)
+{
+	static uint8_t color;
+	static uint8_t run;
+	static uint8_t cycle;
+	static uint8_t delay;
+	
+	if (init) {
+		color = 1;
+		run = 0;
+		cycle = 0;
+		delay = 0;
+		set_color_with_intensity(0, 0x7F);
+		set_led_control(0xF0);
+		return 0;
+	}
+	
+	if (timeStep) return 0;
+	if (!delay) {
+		if ((run == 0) || (run == 60)) delay = 50;
+	}
+	if (delay) delay--;
+	if (!delay) run++;
+	if (run == 120) {
+		run = 0;
+		color++;
+		if (color == 4) {
+			color = 1;
+			cycle++;
+			cycle %= 5; // cycle num
+			if (!cycle) return 1;
+		}
+	}
+	if (!(run & 1) && !(delay & 1)) {
+		timeStep = run / 12;
+		if (timeStep) set_color(color + 1);
+	}
+	else
+	{
+		timeStep = (120 - run) / 12;
+		if (timeStep) set_color(color);
+	}
+	return 0;
+	
+	
+}
