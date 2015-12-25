@@ -19,7 +19,7 @@ uint8_t prog1(uint8_t init)
 		return 0;
 	}
 	if (timeStep == 0) {
-		timeStep = 200;
+		timeStep = 100;
 		if (lcnt == 0x00) {
 			lcnt = 0x1;
 			
@@ -29,7 +29,7 @@ uint8_t prog1(uint8_t init)
 		set_led_control(lcnt);
 		lcnt <<= 1;
 		progCnt++;
-		if (progCnt > 1) { // cycle num
+		if (progCnt > 100) { // cycle num
 			progCnt = 0;
 			return 1;
 		}
@@ -50,7 +50,7 @@ uint8_t prog2(uint8_t init)
 		return 0;
 	}
 	if (timeStep) return 0;
-	timeStep = 35;
+	timeStep = 25;
 	if (!ledint) ledint = 1;
 	else
 		ledint += (ledint+1) / 2;
@@ -58,11 +58,12 @@ uint8_t prog2(uint8_t init)
 	if (ledint > 100) {
 		color++;
 		ledint = 0;
+		timeStep = 200;
 		set_intensity(ledint);
 		if (color > 2) color = 1;
 		set_color(color);
 		progCnt++;
-		if (progCnt > 2) { //cycle num
+		if (progCnt > 6) { //cycle num
 			progCnt = 0;
 			return 1;
 		}	
@@ -95,7 +96,7 @@ uint8_t prog3(uint8_t init)
 		ledctrl++;
 		ledctrl %= 4;
 		runcolor++;
-		runcolor %= 2; //cycle num
+		runcolor %= 24; //cycle num
 		if (!runcolor) {
 			color++;
 			if (color == 4) return 1;
@@ -104,12 +105,12 @@ uint8_t prog3(uint8_t init)
 	set_led_control(0x0);
 	if (run & 1) {
 		set_color(color + 1);
-		set_led_control(0x10 << ((ledctrl + 1) % 4));
+		set_led_control(0x11 << ((ledctrl + 1) % 4));
 	}
 	else
 	{
 		set_color(color);
-		set_led_control(0x10 << ledctrl);
+		set_led_control(0x11 << ledctrl);
 	}
 	return 0;
 }
@@ -145,12 +146,12 @@ uint8_t prog4(uint8_t init)
 		}
 	}
 	if (run & 1) {		
-		timeStep = run / 12;
+		timeStep = run / 24;
 		if (timeStep) set_color(color + 1);
 	}
 	else
 	{		
-		timeStep = (120 - run) / 12;
+		timeStep = (120 - run) / 24;
 		if (timeStep) set_color(color);
 	}
 	return 0;

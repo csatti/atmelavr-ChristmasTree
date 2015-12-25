@@ -76,13 +76,13 @@ void setup(void)
 void next_prog(void)
 {
 	progID++;
-	progID %= 5;
+	progID %= 4;
 	switch(progID)
 	{
 		case 0: prog = prog1; break;
-		case 1: prog = prog2; break;
+		case 1: prog = prog4; break;
 		case 2: prog = prog3; break;
-		case 3: prog = prog4; break;
+		case 3: prog = prog5; break;
 		case 4: prog = prog5; break;
 	}
 	prog(1);
@@ -94,7 +94,7 @@ int main(void)
 	
 	setup();
 	battery_check();
-	prog = prog5;
+	prog = prog1;
 	prog(1);
     while (1) 
     {
